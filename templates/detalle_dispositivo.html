@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle Dispositivo - CFE TIC{% endblock %}
+
+{% block content %}
+<div class="detalle-dispositivo">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="fas fa-desktop me-2"></i>Detalle del Dispositivo
+        </h2>
+        <div>
+            <a href="{{ url_for('editar_dispositivo', dispositivo_id=dispositivo.id) }}" class="btn btn-warning">
+                <i class="fas fa-edit me-1"></i>Editar
+            </a>
+            <a href="{{ url_for('dispositivos') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Información General
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="text-muted" style="width: 40%;">Nombre Host:</td>
+                            <td><strong>{{ dispositivo.nombre_host or '-' }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Dirección MAC:</td>
+                            <td><code>{{ dispositivo.mac_address or '-' }}</code></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Dirección IP:</td>
+                            <td>{{ dispositivo.ip_address or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Tipo:</td>
+                            <td><span class="badge bg-secondary">{{ dispositivo.tipo or '-' }}</span></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Modelo:</td>
+                            <td>{{ dispositivo.modelo or '-' }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-identification-card me-2"></i>Identificación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="text-muted" style="width: 40%;">Número de Serie:</td>
+                            <td>{{ dispositivo.numero_serie or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Número de Activo:</td>
+                            <td>
+                                {% if dispositivo.numero_activo %}
+                                <span class="badge bg-success">{{ dispositivo.numero_activo }}</span>
+                                {% else %}
+                                <span class="badge badge-pendiente">Pendiente</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Origen:</td>
+                            <td>
+                                {% if dispositivo.origen == 'OCS' %}
+                                <span class="badge badge-ocs">OCS</span>
+                                {% else %}
+                                <span class="badge badge-manual">MANUAL</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Dominio CFE:</td>
+                            <td>
+                                {% if dispositivo.dominio %}
+                                <span class="badge bg-success"><i class="fas fa-check me-1"></i>Sí</span>
+                                {% else %}
+                                <span class="badge bg-secondary">No</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-map-marker-alt me-2"></i>Ubicación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="text-muted" style="width: 40%;">Zona:</td>
+                            <td>
+                                {% if dispositivo.cve_zona %}
+                                <span class="badge bg-info">{{ dispositivo.cve_zona }}</span>
+                                {% if dispositivo.nombre_zona %}
+                                - {{ dispositivo.nombre_zona }}
+                                {% endif %}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Área / Departamento:</td>
+                            <td>{{ dispositivo.area_pertenencia or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Coordenadas GPS:</td>
+                            <td>{{ dispositivo.coordenadas_gps or '-' }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clock me-2"></i>Fechas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="text-muted" style="width: 40%;">Fecha de Registro:</td>
+                            <td>{{ dispositivo.fecha_registro or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Último Inventario:</td>
+                            <td>{{ dispositivo.fecha_ultimo_inventario or '-' }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-trash me-2"></i>Zona Peligrosa
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">¿Está seguro de eliminar este dispositivo? Esta acción no se puede deshacer.</p>
+                    <button class="btn btn-danger btn-eliminar" data-id="{{ dispositivo.id }}" data-nombre="{{ dispositivo.nombre_host or 'dispositivo' }}">
+                        <i class="fas fa-trash me-1"></i>Eliminar Dispositivo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="eliminarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de eliminar el dispositivo <strong id="nombreEliminar"></strong>?</p>
+                <p class="text-danger">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarEliminar">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let dispositivoIdEliminar = null;
+const eliminarModal = new bootstrap.Modal(document.getElementById('eliminarModal'));
+
+document.querySelectorAll('.btn-eliminar').forEach(btn => {
+    btn.addEventListener('click', function() {
+        dispositivoIdEliminar = this.dataset.id;
+        document.getElementById('nombreEliminar').textContent = this.dataset.nombre;
+        eliminarModal.show();
+    });
+});
+
+document.getElementById('btnConfirmarEliminar').addEventListener('click', function() {
+    if (!dispositivoIdEliminar) return;
+    
+    fetch(`/dispositivos/eliminar/${dispositivoIdEliminar}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = "{{ url_for('dispositivos') }}";
+        } else {
+            alert('Error al eliminar: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error al eliminar dispositivo');
+    });
+});
+</script>
+{% endblock %}

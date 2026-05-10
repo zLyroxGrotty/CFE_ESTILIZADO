@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - CFE TIC{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h2 class="mb-4">
+        <i class="fas fa-chart-line me-2"></i>Dashboard
+    </h2>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card stat-total">
+                <div class="card-body">
+                    <div class="stat-icon">
+                        <i class="fas fa-desktop"></i>
+                    </div>
+                    <h6 class="card-subtitle mb-2">Total Dispositivos</h6>
+                    <h2 class="card-title mb-0">{{ total_dispositivos }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card stat-con-activo">
+                <div class="card-body">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h6 class="card-subtitle mb-2">Con Activo</h6>
+                    <h2 class="card-title mb-0">{{ con_activo }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card stat-sin-activo">
+                <div class="card-body">
+                    <div class="stat-icon">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <h6 class="card-subtitle mb-2">Sin Activo</h6>
+                    <h2 class="card-title mb-0">{{ sin_activo }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card stat-dominio">
+                <div class="card-body">
+                    <div class="stat-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <h6 class="card-subtitle mb-2">En Dominio CFE</h6>
+                    <h2 class="card-title mb-0">{{ en_dominio }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Dispositivos por Zona
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="chartZonas"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>Distribución por Tipo
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="chartTipos"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>Alertas Activas
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if alertas and alertas|length > 0 %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Dispositivo</th>
+                            <th>Tipo</th>
+                            <th>Mensaje</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for alerta in alertas %}
+                        <tr>
+                            <td>{{ alerta.nombre_host or 'N/A' }}</td>
+                            <td>
+                                <span class="badge bg-warning">{{ alerta.tipo_alerta }}</span>
+                            </td>
+                            <td>{{ alerta.mensaje }}</td>
+                            <td>{{ alerta.fecha }}</td>
+                            <td>
+                                <a href="{{ url_for('resolver_alerta_route', alerta_id=alerta.id) }}" 
+                                   class="btn btn-sm btn-success" 
+                                   title="Marcar como resuelta">
+                                    <i class="fas fa-check"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
+                <p class="text-muted">No hay alertas activas</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const chartZonasCtx = document.getElementById('chartZonas').getContext('2d');
+    const zonasData = {{ dispositivos_por_zona | tojson }};
+    
+    new Chart(chartZonasCtx, {
+        type: 'bar',
+        data: {
+            labels: zonasData.map(z => z.nombre_zona || z.cve_zona),
+            datasets: [{
+                label: 'Dispositivos',
+                data: zonasData.map(z => z.count),
+                backgroundColor: 'rgba(0, 51, 160, 0.7)',
+                borderColor: 'rgba(0, 51, 160, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+
+    const chartTiposCtx = document.getElementById('chartTipos').getContext('2d');
+    const tiposData = {{ count_by_tipo | tojson }};
+    const tiposLabels = Object.keys(tiposData);
+    const tiposValues = Object.values(tiposData);
+    
+    new Chart(chartTiposCtx, {
+        type: 'doughnut',
+        data: {
+            labels: tiposLabels,
+            datasets: [{
+                data: tiposValues,
+                backgroundColor: [
+                    'rgba(0, 51, 160, 0.7)',
+                    'rgba(0, 123, 255, 0.7)',
+                    'rgba(23, 162, 184, 0.7)',
+                    'rgba(40, 167, 69, 0.7)',
+                    'rgba(255, 193, 7, 0.7)',
+                    'rgba(253, 126, 20, 0.7)',
+                    'rgba(220, 53, 69, 0.7)',
+                    'rgba(102, 16, 242, 0.7)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'right' }
+            }
+        }
+    });
+</script>
+{% endblock %}

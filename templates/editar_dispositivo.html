@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Dispositivo - CFE TIC{% endblock %}
+
+{% block content %}
+<div class="editar-dispositivo">
+    <h2 class="mb-4">
+        <i class="fas fa-edit me-2"></i>Editar Dispositivo
+    </h2>
+
+    {% if error %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ error }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('editar_dispositivo', dispositivo_id=dispositivo.id) }}">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5 class="mb-3 text-muted">
+                            <i class="fas fa-desktop me-2"></i>Información del Dispositivo
+                        </h5>
+                        
+                        <div class="mb-3">
+                            <label for="tipo" class="form-label">Tipo de Dispositivo *</label>
+                            <select class="form-select" id="tipo" name="tipo" required>
+                                {% for tipo in tipos %}
+                                <option value="{{ tipo }}" {% if dispositivo.tipo == tipo %}selected{% endif %}>
+                                    {{ tipo }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="numero_serie" class="form-label">Número de Serie *</label>
+                            <input type="text" class="form-control" id="numero_serie" name="numero_serie" 
+                                   value="{{ dispositivo.numero_serie or '' }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="numero_activo" class="form-label">Número de Activo *</label>
+                            <input type="text" class="form-control" id="numero_activo" name="numero_activo" 
+                                   value="{{ dispositivo.numero_activo or '' }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="mac_address" class="form-label">Dirección MAC</label>
+                            <input type="text" class="form-control" id="mac_address" name="mac_address" 
+                                   value="{{ dispositivo.mac_address or '' }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="ip_address" class="form-label">Dirección IP</label>
+                            <input type="text" class="form-control" id="ip_address" name="ip_address" 
+                                   value="{{ dispositivo.ip_address or '' }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="nombre_host" class="form-label">Nombre del Host</label>
+                            <input type="text" class="form-control" id="nombre_host" name="nombre_host" 
+                                   value="{{ dispositivo.nombre_host or '' }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="modelo" class="form-label">Modelo</label>
+                            <input type="text" class="form-control" id="modelo" name="modelo" 
+                                   value="{{ dispositivo.modelo or '' }}">
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h5 class="mb-3 text-muted">
+                            <i class="fas fa-map-marker-alt me-2"></i>Ubicación y Asignación
+                        </h5>
+
+                        <div class="mb-3">
+                            <label for="cve_zona" class="form-label">Zona CFE *</label>
+                            <select class="form-select" id="cve_zona" name="cve_zona" required>
+                                {% for item in zonas %}
+                                <option value="{{ item[0] }}" {% if dispositivo.cve_zona == item[0] %}selected{% endif %}>
+                                    {{ item[1] }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="coordenadas_gps" class="form-label">Coordenadas GPS</label>
+                            <input type="text" class="form-control" id="coordenadas_gps" name="coordenadas_gps" 
+                                   value="{{ dispositivo.coordenadas_gps or '' }}"
+                                   placeholder="20.5888, -100.3899">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="area_pertenencia" class="form-label">Área / Departamento *</label>
+                            <input type="text" class="form-control" id="area_pertenencia" name="area_pertenencia" 
+                                   value="{{ dispositivo.area_pertenencia or '' }}" required>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="dominio" name="dominio"
+                                   {% if dispositivo.dominio %}checked{% endif %}>
+                            <label class="form-check-label" for="dominio">
+                                Pertenece al dominio cfe.mx
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('dispositivos') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Volver
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Registro Manual - CFE TIC{% endblock %}
+
+{% block content %}
+<div class="registro-manual">
+    <h2 class="mb-4">
+        <i class="fas fa-plus-circle me-2"></i>Registro Manual de Dispositivos
+    </h2>
+
+    {% if error %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ error }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('registro_manual') }}">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5 class="mb-3 text-muted">
+                            <i class="fas fa-desktop me-2"></i>Información del Dispositivo
+                        </h5>
+                        
+                        <div class="mb-3">
+                            <label for="tipo" class="form-label">Tipo de Dispositivo *</label>
+                            <select class="form-select" id="tipo" name="tipo" required>
+                                <option value="">Seleccionar tipo...</option>
+                                {% for tipo in tipos %}
+                                <option value="{{ tipo }}">{{ tipo }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="numero_serie" class="form-label">Número de Serie *</label>
+                            <input type="text" class="form-control" id="numero_serie" name="numero_serie" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="numero_activo" class="form-label">Número de Activo *</label>
+                            <input type="text" class="form-control" id="numero_activo" name="numero_activo" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="mac_address" class="form-label">Dirección MAC</label>
+                            <input type="text" class="form-control" id="mac_address" name="mac_address" 
+                                   placeholder="XX:XX:XX:XX:XX:XX">
+                            <small class="text-muted">Opcional para impresoras sin red</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="ip_address" class="form-label">Dirección IP</label>
+                            <input type="text" class="form-control" id="ip_address" name="ip_address" 
+                                   placeholder="192.168.1.100">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="nombre_host" class="form-label">Nombre del Host</label>
+                            <input type="text" class="form-control" id="nombre_host" name="nombre_host">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="modelo" class="form-label">Modelo</label>
+                            <input type="text" class="form-control" id="modelo" name="modelo">
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h5 class="mb-3 text-muted">
+                            <i class="fas fa-map-marker-alt me-2"></i>Ubicación y Asignación
+                        </h5>
+
+                        <div class="mb-3">
+                            <label for="cve_zona" class="form-label">Zona CFE *</label>
+                            <select class="form-select" id="cve_zona" name="cve_zona" required>
+                                {% for item in zonas %}
+                                <option value="{{ item[0] }}">{{ item[1] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="coordenadas_gps" class="form-label">Coordenadas GPS</label>
+                            <input type="text" class="form-control" id="coordenadas_gps" name="coordenadas_gps" 
+                                   placeholder="20.5888, -100.3899">
+                            <small class="text-muted">Latitud, Longitud</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="area_pertenencia" class="form-label">Área / Departamento *</label>
+                            <input type="text" class="form-control" id="area_pertenencia" name="area_pertenencia" required
+                                   placeholder="Ej: GERENCIA DIVISIONAL">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="area_pertenencia" class="form-label">Departamento</label>
+                            <select class="form-select" id="departamento" name="departamento">
+                                <option value="">Seleccionar...</option>
+                                {% for depto in departamentos %}
+                                <option value="{{ depto }}">{{ depto }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="dominio" name="dominio">
+                            <label class="form-check-label" for="dominio">
+                                Pertenece al dominio cfe.mx
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Guardar Dispositivo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

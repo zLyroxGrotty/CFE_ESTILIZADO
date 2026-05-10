@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}Dispositivos - CFE TIC{% endblock %}
+
+{% block content %}
+<div class="dispositivos-page">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="fas fa-list me-2"></i>Dispositivos
+        </h2>
+        <span class="badge bg-primary fs-6">
+            Total: {{ dispositivos|length }}
+        </span>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ error }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('dispositivos') }}" class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" class="form-control" name="busqueda" 
+                               placeholder="Buscar nombre, MAC, serie..." 
+                               value="{{ search }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="tipo">
+                        <option value="">Todos los tipos</option>
+                        {% for tipo in tipos %}
+                        <option value="{{ tipo }}" {% if tipo_filter == tipo %}selected{% endif %}>
+                            {{ tipo }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="zona">
+                        <option value="">Todas las zonas</option>
+                        {% for clave, nombre in zonas.items() %}
+                        <option value="{{ clave }}" {% if zona_filter == clave %}selected{% endif %}>
+                            {{ clave }} - {{ nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-filter me-1"></i>Filtrar
+                        </button>
+                        <a href="{{ url_for('dispositivos') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-eraser"></i>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nombre Host</th>
+                            <th>MAC</th>
+                            <th>IP</th>
+                            <th>Tipo</th>
+                            <th>Activo</th>
+                            <th>Zona</th>
+                            <th>Origen</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if dispositivos and dispositivos|length > 0 %}
+                        {% for dispositivo in dispositivos %}
+                        <tr>
+                            <td>
+                                <strong>{{ dispositivo.nombre_host or '-' }}</strong>
+                            </td>
+                            <td>
+                                <code>{{ dispositivo.mac_address or '-' }}</code>
+                            </td>
+                            <td>{{ dispositivo.ip_address or '-' }}</td>
+                            <td>
+                                <span class="badge bg-secondary">{{ dispositivo.tipo or '-' }}</span>
+                            </td>
+                            <td>
+                                {% if dispositivo.numero_activo %}
+                                <span class="badge bg-success">{{ dispositivo.numero_activo }}</span>
+                                {% else %}
+                                <span class="badge badge-pendiente">Pendiente</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if dispositivo.cve_zona %}
+                                <span class="badge bg-info">{{ dispositivo.cve_zona }}</span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if dispositivo.origen == 'OCS' %}
+                                <span class="badge badge-ocs">OCS</span>
+                                {% else %}
+                                <span class="badge badge-manual">MANUAL</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('detalle_dispositivo', dispositivo_id=dispositivo.id) }}" 
+                                       class="btn btn-outline-primary" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('editar_dispositivo', dispositivo_id=dispositivo.id) }}" 
+                                       class="btn btn-outline-warning" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button class="btn btn-outline-danger btn-eliminar" 
+                                            data-id="{{ dispositivo.id }}"
+                                            data-nombre="{{ dispositivo.nombre_host or 'dispositivo' }}"
+                                            title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4">
+                                <i class="fas fa-inbox text-muted fa-3x mb-3"></i>
+                                <p class="text-muted">No se encontraron dispositivos</p>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% if total_pages > 1 %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            <li class="page-item {% if page == 1 %}disabled{% endif %}">
+                <a class="page-link" href="?page={{ page - 1 }}&tipo={{ tipo_filter }}&zona={{ zona_filter }}&busqueda={{ search }}">
+                    <i class="fas fa-chevron-left"></i> Anterior
+                </a>
+            </li>
+            
+            {% for p in range(1, total_pages + 1) %}
+            <li class="page-item {% if p == page %}active{% endif %}">
+                <a class="page-link" href="?page={{ p }}&tipo={{ tipo_filter }}&zona={{ zona_filter }}&busqueda={{ search }}">
+                    {{ p }}
+                </a>
+            </li>
+            {% endfor %}
+            
+            <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+                <a class="page-link" href="?page={{ page + 1 }}&tipo={{ tipo_filter }}&zona={{ zona_filter }}&busqueda={{ search }}">
+                    Siguiente <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<div class="modal fade" id="eliminarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de eliminar el dispositivo <strong id="nombreEliminar"></strong>?</p>
+                <p class="text-danger">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarEliminar">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let dispositivoIdEliminar = null;
+const eliminarModal = new bootstrap.Modal(document.getElementById('eliminarModal'));
+
+document.querySelectorAll('.btn-eliminar').forEach(btn => {
+    btn.addEventListener('click', function() {
+        dispositivoIdEliminar = this.dataset.id;
+        document.getElementById('nombreEliminar').textContent = this.dataset.nombre;
+        eliminarModal.show();
+    });
+});
+
+document.getElementById('btnConfirmarEliminar').addEventListener('click', function() {
+    if (!dispositivoIdEliminar) return;
+    
+    fetch(`/dispositivos/eliminar/${dispositivoIdEliminar}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            eliminarModal.hide();
+            location.reload();
+        } else {
+            alert('Error al eliminar: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error al eliminar dispositivo');
+    });
+});
+</script>
+{% endblock %}
