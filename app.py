@@ -43,6 +43,17 @@ def dashboard():
         cursor.execute("SELECT COUNT(*) as total FROM DISPOSITIVOS")
         total_dispositivos = cursor.fetchone()['total']
         
+        # Conteo por origen (OCS vs MANUAL)
+        cursor.execute("""
+            SELECT origen, COUNT(*) as count
+            FROM DISPOSITIVOS
+            GROUP BY origen
+        """)
+        origen_rows = cursor.fetchall()
+        count_by_origen = {row['origen']: row['count'] for row in origen_rows}
+        total_ocs    = count_by_origen.get('OCS', 0)
+        total_manual = count_by_origen.get('MANUAL', 0)
+        
         cursor.execute("""
             SELECT tipo, COUNT(*) as count 
             FROM DISPOSITIVOS 
@@ -79,6 +90,13 @@ def dashboard():
         """)
         dispositivos_por_zona = [dict(row) for row in cursor.fetchall()]
         
+        # Dispositivos sin zona asignada
+        cursor.execute("""
+            SELECT COUNT(*) as total FROM DISPOSITIVOS
+            WHERE cve_zona IS NULL OR cve_zona = ''
+        """)
+        sin_zona = cursor.fetchone()['total']
+        
         alertas = obtener_alertas(resueltas=False)
         
         conn.close()
@@ -86,6 +104,9 @@ def dashboard():
         return render_template(
             'dashboard.html',
             total_dispositivos=total_dispositivos,
+            total_ocs=total_ocs,
+            total_manual=total_manual,
+            sin_zona=sin_zona,
             count_by_tipo=count_by_tipo,
             con_activo=con_activo,
             sin_activo=sin_activo,
@@ -127,6 +148,7 @@ def registro_manual():
             'numero_serie': request.form.get('numero_serie', '').strip(),
             'modelo': request.form.get('modelo', '').strip(),
             'tipo': request.form.get('tipo', ''),
+            'numero_inventario': request.form.get('numero_inventario', '').strip(),
             'numero_activo': request.form.get('numero_activo', '').strip(),
             'cve_zona': request.form.get('cve_zona', ''),
             'coordenadas_gps': request.form.get('coordenadas_gps', '').strip(),
@@ -175,8 +197,12 @@ def dispositivos():
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
-        tipo_filter = request.args.get('tipo', '')
-        zona_filter = request.args.get('zona', '')
+        tipo_filter    = request.args.get('tipo', '')
+        zona_filter    = request.args.get('zona', '')
+        origen_filter  = request.args.get('origen', '')
+        activo_filter  = request.args.get('activo', '')
+        dominio_filter = request.args.get('dominio', '')
+        sin_zona_filter = request.args.get('sin_zona', '')
         search = request.args.get('busqueda', '')
         page = int(request.args.get('page', 1))
         per_page = 10
@@ -192,10 +218,27 @@ def dispositivos():
             query += " AND d.cve_zona = ?"
             params.append(zona_filter)
         
+        if origen_filter:
+            query += " AND d.origen = ?"
+            params.append(origen_filter)
+        
+        if activo_filter == 'con':
+            query += " AND d.numero_activo IS NOT NULL AND d.numero_activo != ''"
+        elif activo_filter == 'sin':
+            query += " AND (d.numero_activo IS NULL OR d.numero_activo = '')"
+        
+        if dominio_filter == '1':
+            query += " AND d.dominio = 1"
+        elif dominio_filter == '0':
+            query += " AND d.dominio = 0"
+        
+        if sin_zona_filter == '1':
+            query += " AND (d.cve_zona IS NULL OR d.cve_zona = '')"
+        
         if search:
-            query += " AND (d.nombre_host LIKE ? OR d.ip_address LIKE ? OR d.mac_address LIKE ? OR d.numero_activo LIKE ?)"
+            query += " AND (d.nombre_host LIKE ? OR d.ip_address LIKE ? OR d.mac_address LIKE ? OR d.numero_activo LIKE ? OR d.numero_inventario LIKE ?)"
             search_param = f"%{search}%"
-            params.extend([search_param, search_param, search_param, search_param])
+            params.extend([search_param, search_param, search_param, search_param, search_param])
         
         cursor.execute(f"SELECT COUNT(*) as total FROM ({query})", params)
         total = cursor.fetchone()['total']
@@ -223,6 +266,10 @@ def dispositivos():
             tipos=TIPOS_DISPOSITIVO,
             tipo_filter=tipo_filter,
             zona_filter=zona_filter,
+            origen_filter=origen_filter,
+            activo_filter=activo_filter,
+            dominio_filter=dominio_filter,
+            sin_zona_filter=sin_zona_filter,
             search=search,
             page=page,
             total_pages=total_pages
@@ -276,6 +323,25 @@ def api_dispositivos():
         }), 500
 
 
+@app.route('/sincronizar', methods=['POST'])
+def sincronizar():
+    """Dispara sincronización manual con OCS Inventory"""
+    try:
+        from sincronizador import sincronizar_bd_local, verificar_alertas, verificar_inventario_vencido
+        sincronizados = sincronizar_bd_local()
+        alertas_mov = verificar_alertas()
+        alertas_inv = verificar_inventario_vencido()
+        return jsonify({
+            'success': True,
+            'sincronizados': sincronizados,
+            'alertas_generadas': alertas_mov + alertas_inv,
+            'mensaje': f'{sincronizados} dispositivos sincronizados, {alertas_mov + alertas_inv} alertas generadas'
+        })
+    except Exception as e:
+        app.logger.error(f"Error en sincronización: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/alertas/resolver/<int:alerta_id>')
 def resolver_alerta_route(alerta_id):
     """Marca una alerta como resuelta"""
@@ -319,6 +385,7 @@ def editar_dispositivo(dispositivo_id):
             'numero_serie': request.form.get('numero_serie', '').strip(),
             'modelo': request.form.get('modelo', '').strip(),
             'tipo': request.form.get('tipo', ''),
+            'numero_inventario': request.form.get('numero_inventario', '').strip(),
             'numero_activo': request.form.get('numero_activo', '').strip(),
             'cve_zona': request.form.get('cve_zona', ''),
             'coordenadas_gps': request.form.get('coordenadas_gps', '').strip(),

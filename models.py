@@ -37,6 +37,7 @@ def init_database():
                     modelo TEXT,
                     tipo TEXT,
                     origen TEXT DEFAULT 'OCS',
+                    numero_inventario TEXT,
                     numero_activo TEXT,
                     cve_zona TEXT,
                     coordenadas_gps TEXT,
@@ -47,6 +48,12 @@ def init_database():
                     FOREIGN KEY (cve_zona) REFERENCES ZONAS(cve_zona)
                 )
             """)
+            
+            # Migración: agregar columna si ya existe la tabla sin ella
+            try:
+                cursor.execute("ALTER TABLE DISPOSITIVOS ADD COLUMN numero_inventario TEXT")
+            except Exception:
+                pass  # La columna ya existe
             
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS ALERTAS (
@@ -60,6 +67,13 @@ def init_database():
                 )
             """)
             
+            # Poblar zonas desde config.py (INSERT OR IGNORE para no duplicar)
+            for cve_zona, nombre_zona in config.ZONAS_CFE.items():
+                cursor.execute("""
+                    INSERT OR IGNORE INTO ZONAS (cve_zona, nombre_zona)
+                    VALUES (?, ?)
+                """, (cve_zona, nombre_zona))
+            
             conn.commit()
             print("Base de datos inicializada correctamente")
             return True
@@ -71,16 +85,18 @@ def init_database():
 
 def importar_zonas_excel(archivo_excel):
     """
-    Importa zonas desde archivo Excel a la tabla ZONAS
-    
-    Args:
-        archivo_excel: Ruta al archivo Excel con datos de zonas
-        
-    Returns:
-        int: Número de zonas importadas
+    Importa zonas desde archivo Excel. Si el archivo no existe o está vacío, se omite sin error.
     """
     try:
+        import os
+        if not os.path.exists(archivo_excel) or os.path.getsize(archivo_excel) == 0:
+            print(f"Archivo de zonas '{archivo_excel}' vacío o no encontrado — se omite importación")
+            return 0
+        
         df = pd.read_excel(archivo_excel)
+        if df.empty or 'CVE ZONA' not in df.columns:
+            print("Archivo Excel sin datos de zonas válidos — se omite importación")
+            return 0
         
         df_filtrado = df[df['CVE ZONA'].astype(str).str.startswith('DP')]
         
@@ -126,9 +142,9 @@ def guardar_dispositivo_manual(datos):
             cursor.execute("""
                 INSERT INTO DISPOSITIVOS (
                     mac_address, ip_address, nombre_host, numero_serie,
-                    modelo, tipo, origen, numero_activo, cve_zona,
+                    modelo, tipo, origen, numero_inventario, numero_activo, cve_zona,
                     coordenadas_gps, area_pertenencia, dominio
-                ) VALUES (?, ?, ?, ?, ?, ?, 'MANUAL', ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, 'MANUAL', ?, ?, ?, ?, ?, ?)
             """, (
                 datos.get('mac_address'),
                 datos.get('ip_address'),
@@ -136,6 +152,7 @@ def guardar_dispositivo_manual(datos):
                 datos.get('numero_serie'),
                 datos.get('modelo'),
                 datos.get('tipo'),
+                datos.get('numero_inventario'),
                 datos.get('numero_activo'),
                 datos.get('cve_zona'),
                 datos.get('coordenadas_gps'),
@@ -418,6 +435,7 @@ def actualizar_dispositivo(dispositivo_id, datos):
                     numero_serie = ?,
                     modelo = ?,
                     tipo = ?,
+                    numero_inventario = ?,
                     numero_activo = ?,
                     cve_zona = ?,
                     coordenadas_gps = ?,
@@ -431,6 +449,7 @@ def actualizar_dispositivo(dispositivo_id, datos):
                 datos.get('numero_serie'),
                 datos.get('modelo'),
                 datos.get('tipo'),
+                datos.get('numero_inventario'),
                 datos.get('numero_activo'),
                 datos.get('cve_zona'),
                 datos.get('coordenadas_gps'),

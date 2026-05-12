@@ -42,6 +42,14 @@
                         </div>
 
                         <div class="mb-3">
+                            <label for="numero_inventario" class="form-label">Número de Inventario</label>
+                            <input type="text" class="form-control" id="numero_inventario" name="numero_inventario"
+                                   value="{{ dispositivo.numero_inventario or '' }}"
+                                   placeholder="Ej: INV-2024-001">
+                            <small class="text-muted">Identificador interno del inventario CFE</small>
+                        </div>
+
+                        <div class="mb-3">
                             <label for="numero_activo" class="form-label">Número de Activo *</label>
                             <input type="text" class="form-control" id="numero_activo" name="numero_activo" 
                                    value="{{ dispositivo.numero_activo or '' }}" required>

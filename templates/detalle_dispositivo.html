@@ -65,6 +65,16 @@
                             <td>{{ dispositivo.numero_serie or '-' }}</td>
                         </tr>
                         <tr>
+                            <td class="text-muted">Número de Inventario:</td>
+                            <td>
+                                {% if dispositivo.numero_inventario %}
+                                <span class="badge bg-primary">{{ dispositivo.numero_inventario }}</span>
+                                {% else %}
+                                <span class="badge bg-light text-muted border">Sin asignar</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
                             <td class="text-muted">Número de Activo:</td>
                             <td>
                                 {% if dispositivo.numero_activo %}
