@@ -13,13 +13,12 @@ TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
 
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
 
-OCS_API_URL = "http://localhost/ocsapi/v1"
-
-OCS_API_USER = "usuario_api"
-
-OCS_API_PASS = "contraseña_api"
-
-OCS_TIMEOUT = 30
+# Configuración OCS MariaDB (reemplaza OCS_API_URL, OCS_API_USER, etc.)
+OCS_DB_HOST = "localhost"
+OCS_DB_PORT = 3306
+OCS_DB_NAME = "ocsweb"
+OCS_DB_USER = "root"
+OCS_DB_PASS = "tu_password"
 
 ZONAS_CFE = {
     "DP000": "OFICINAS DIVISIONALES",
