@@ -218,7 +218,7 @@ def actualizar_dispositivo_ocs(datos):
                     datos.get('coordenadas_gps'),
                     datos.get('area_pertenencia'),
                     datos.get('dominio', 0),
-                    datos.get('fecha_ultimo_inventario'),
+                    datetime.now(),
                     mac_address
                 ))
                 
